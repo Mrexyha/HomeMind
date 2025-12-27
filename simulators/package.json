@@ -1,0 +1,14 @@
+{
+  "name": "homemind-simulators",
+  "version": "1.0.0",
+  "description": "Device simulators for HomeMind",
+  "main": "simulate_mqtt.js",
+  "scripts": {
+    "start": "node simulate_mqtt.js"
+  },
+  "dependencies": {
+    "mqtt": "^5.10.0",
+    "axios": "^1.7.7"
+  }
+}
+

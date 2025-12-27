@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: homemind-postgres
+    environment:
+      POSTGRES_USER: homemind
+      POSTGRES_PASSWORD: homemind_pass
+      POSTGRES_DB: homemind_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homemind"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: homemind-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mqtt-broker:
+    image: eclipse-mosquitto:2.0
+    container_name: homemind-mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mqtt/config:/mosquitto/config
+      - ./mqtt/data:/mosquitto/data
+      - ./mqtt/log:/mosquitto/log
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-h", "localhost", "-t", "test", "-C", "1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: homemind-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://homemind:homemind_pass@postgres:5432/homemind_db
+      - REDIS_URL=redis://redis:6379
+      - MQTT_BROKER_URL=mqtt://mqtt-broker:1883
+      - ML_SERVICE_URL=http://ml-service:8000
+      - JWT_SECRET=your-secret-key-change-in-production
+      - PORT=3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mqtt-broker:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: homemind-ml-service
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://homemind:homemind_pass@postgres:5432/homemind_db
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./ml-service:/app
+      - ml_models:/app/models
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: homemind-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  simulator:
+    build:
+      context: ./simulators
+      dockerfile: Dockerfile
+    container_name: homemind-simulator
+    environment:
+      - MQTT_BROKER=mqtt://mqtt-broker:1883
+      - API_URL=http://backend:3000
+    depends_on:
+      - mqtt-broker
+      - backend
+    volumes:
+      - ./simulators:/app
+
+volumes:
+  postgres_data:
+  redis_data:
+  ml_models:
+
