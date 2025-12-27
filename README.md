@@ -1,70 +1,83 @@
-# HomeMind - Система керування розумним будинком
+# Smart Home Management System with Adaptive AI Automation
 
-Система керування розумним будинком із адаптивною автоматизацією через AI.
+**Short description:** A smart home prototype with a web interface, backend API, and a dedicated ML service that learns user behavior and provides adaptive automation and recommendations.
 
-## Архітектура
+---
 
-Проєкт складається з наступних компонентів:
+## Overview
 
-- **Frontend** (React) - панель управління, налаштування автоматизацій, візуалізація даних
-- **Backend** (NestJS) - REST API, авторизація, бізнес-логіка
-- **ML Service** (Python FastAPI) - тренування моделей та inference
-- **Simulators** (Node.js/Python) - симуляція пристроїв та телеметрії
-- **PostgreSQL** - база даних
-- **Redis** - кеш/черга (опціонально)
-- **MQTT Broker** (Mosquitto) - для IoT-повідомлень
+- **Frontend:** React (+ TypeScript)
+- **Backend:** NestJS
+- **ML Service:** Python (FastAPI)
+- **Simulators:** Node.js / Python scripts for telemetry and user behavior simulation
+- **Database:** PostgreSQL
+- **Message Broker (optional):** MQTT (Mosquitto) / Redis
+- **Containerization:** Docker + `docker-compose`
 
-## Швидкий старт
+## Repository Structure
 
-### Вимоги
-
-- Docker та Docker Compose
-- Node.js 20+ (для локальної розробки)
-- Python 3.11+ (для локальної розробки ML-сервісу)
-
-### Запуск через Docker Compose
-
-1. Клонуйте репозиторій:
-```bash
-git clone <repository-url>
-cd HomeMind
+```
+/project-root
+  /frontend       # React application
+  /backend        # NestJS API
+  /ml-service     # FastAPI + ML logic
+  /simulators     # Device and user simulators (Node/Python)
+  docker-compose.yml
+  README.md
 ```
 
-2. Запустіть всі сервіси:
+## Project Goal
+
+The goal of this project is to design and implement a smart home management system that allows users to control devices, collect telemetry data, configure automation rules, and leverage AI/ML to adapt automation behavior based on user habits and environmental context.
+
+## Key Features
+
+- Real-time monitoring of smart home devices
+- Manual control of devices (on/off, brightness, temperature, etc.)
+- Rule-based automation (trigger → condition → action)
+- Collection and storage of device telemetry data
+- AI/ML service for model training and inference
+- Adaptive recommendations based on user behavior patterns
+- Device and user behavior simulators for testing
+- Local deployment using Docker Compose
+
+## Quick Start (Local)
+
+### Prerequisites
+
+- Docker & Docker Compose
+- Node.js (for local frontend/simulator development)
+- Python 3.9+ (for local ML service development if not using Docker)
+
+### Run with Docker (recommended)
+
+1. Clone the repository:
+
 ```bash
-docker-compose up -d
+git clone <repo-url>
+cd project-root
 ```
 
-3. Дочекайтесь, поки всі сервіси запустяться (перевірте логи):
-```bash
-docker-compose logs -f
-```
-
-4. Відкрийте браузер:
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:3000
-   - ML Service: http://localhost:8000
-   - MQTT Broker: mqtt://localhost:1883
-
-### Перший вхід
-
-1. Відкрийте http://localhost:5173
-2. Зареєструйте нового користувача
-3. Створіть пристрої та автоматизації
-
-## Локальна розробка
-
-### Backend
+2. Build and start all services:
 
 ```bash
-cd backend
-npm install
-npm run start:dev
+docker-compose up --build
 ```
 
-Backend буде доступний на http://localhost:3000
+3. Open the web UI:
+
+```
+http://localhost:3000
+```
+
+(Port may vary depending on configuration.)
+
+## Development Guide
 
 ### Frontend
+
+- Built with React and TypeScript
+- Development mode:
 
 ```bash
 cd frontend
@@ -72,132 +85,132 @@ npm install
 npm run dev
 ```
 
-Frontend буде доступний на http://localhost:5173
+### Backend
+
+- Built with NestJS
+- Provides REST API and authentication
+- Local run:
+
+```bash
+cd backend
+npm install
+npm run start:dev
+```
 
 ### ML Service
 
+- Built with FastAPI
+- Handles model training and inference
+- Local run:
+
 ```bash
 cd ml-service
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-python main.py
+uvicorn main:app --reload --port 8001
 ```
 
-ML Service буде доступний на http://localhost:8000
+- Main endpoints:
 
-### Симулятори
+  - `POST /ml/train` – start model training
+  - `GET /ml/status/{id}` – training status
+  - `POST /ml/infer` – get predictions or recommendations
 
-MQTT симулятор:
+### Simulators
+
+- Used to generate synthetic telemetry and user actions
+- Can publish data via HTTP or MQTT
+
+Example:
+
 ```bash
 cd simulators
-npm install
-MQTT_BROKER=mqtt://localhost:1883 API_URL=http://localhost:3000 node simulate_mqtt.js
-```
-
-Python симулятор користувача:
-```bash
-cd simulators
+node simulate_mqtt.js --scenario day-night --rate 1s
 python simulate_user.py --profile office_worker --start 2025-12-01
 ```
 
-## API Документація
+## API Overview (Simplified)
 
-### Авторизація
+**Authentication**
 
-- `POST /auth/login` - Вхід
-- `POST /auth/register` - Реєстрація
-- `GET /auth/me` - Поточний користувач
+- `POST /auth/login`
 
-### Пристрої
+**Devices**
 
-- `GET /api/devices` - Список пристроїв
-- `POST /api/devices` - Створити пристрій
-- `GET /api/devices/:id` - Отримати пристрій
-- `PATCH /api/devices/:id` - Оновити пристрій
-- `DELETE /api/devices/:id` - Видалити пристрій
-- `POST /api/devices/:id/command` - Відправити команду
+- `GET /api/devices`
+- `POST /api/devices/{id}/command`
 
-### Автоматизації
+**Telemetry**
 
-- `GET /api/automations` - Список автоматизацій
-- `POST /api/automations` - Створити автоматизацію
-- `GET /api/automations/:id` - Отримати автоматизацію
-- `PATCH /api/automations/:id` - Оновити автоматизацію
-- `DELETE /api/automations/:id` - Видалити автоматизацію
-- `POST /api/automations/:id/execute` - Виконати автоматизацію
+- `POST /api/telemetry`
+- `GET /api/telemetry?deviceId=&from=&to=`
 
-### Телеметрія
+**Automations**
 
-- `POST /api/telemetry` - Надіслати телеметрію (для симуляторів)
-- `GET /api/telemetry?deviceId=:id&from=:from&to=:to` - Отримати телеметрію
+- `GET /POST /PUT /DELETE /api/automations`
 
-### ML Service
+**ML Service**
 
-- `POST /ml/train` - Запустити тренування моделі
-- `GET /ml/status/:run_id` - Статус тренування
-- `POST /ml/infer` - Отримати рекомендації
+- `POST /ml/train`
+- `POST /ml/infer`
 
-## Структура бази даних
+## Data Model (High Level)
 
-Основні таблиці:
+- `users` – user accounts and roles
+- `devices` – registered smart devices
+- `device_data` – telemetry and sensor data
+- `automations` – automation rules
+- `ml_models` – trained ML models
+- `model_runs` – training runs and metrics
 
-- `users` - користувачі
-- `devices` - пристрої
-- `device_data` - телеметрія
-- `automations` - автоматизації
-- `scenes` - сцени
-- `logs` - логи
-- `ml_models` - ML моделі
-- `model_runs` - запуски тренувань
+## AI / ML Concept
 
-## Налаштування
+- **Tasks:**
 
-### Змінні середовища
+  - Predicting user actions (e.g., when to turn lights on/off)
+  - Detecting anomalies in device behavior
+  - (Optional) Energy optimization via reinforcement learning
 
-Backend (.env):
-```
-DATABASE_URL=postgresql://homemind:homemind_pass@localhost:5432/homemind_db
-JWT_SECRET=your-secret-key
-PORT=3000
-```
+- **Approaches:**
 
-Frontend (.env):
-```
-VITE_API_URL=http://localhost:3000
-```
+  - Supervised learning (Random Forest, XGBoost)
+  - Time-series models (LSTM, Transformer)
+  - Anomaly detection (Isolation Forest, Autoencoders)
 
-ML Service (.env):
-```
-DATABASE_URL=postgresql://homemind:homemind_pass@localhost:5432/homemind_db
-```
+- **Metrics:** Accuracy, F1-score, RMSE, Precision@K, energy savings
 
-## Тестування
+## Docker Compose
 
-### Backend
-```bash
-cd backend
-npm test
-```
+The `docker-compose.yml` file defines the following services:
 
-### ML Service
-```bash
-cd ml-service
-pytest
-```
+- frontend
+- backend
+- ml-service
+- postgres
+- mosquitto (MQTT broker, optional)
+- redis (optional)
 
-## Розгортання
+## Testing
 
-Для production:
+- Unit tests: Jest (frontend/backend), pytest (ML)
+- Integration tests: full stack via Docker Compose
+- End-to-end tests: Playwright (optional)
 
-1. Змініть `JWT_SECRET` на безпечний ключ
-2. Встановіть `NODE_ENV=production` для backend
-3. Налаштуйте HTTPS
-4. Використовуйте production базу даних
-5. Налаштуйте моніторинг та логи
+## Known Limitations
 
-## Ліцензія
+- ML model quality depends on data volume and quality; simulated data is used for the course project.
+- Reinforcement learning approaches may be simplified due to time and complexity constraints.
 
-Див. файл LICENSE
+## Academic Context
 
-## Автори
+This project is developed as a **course project**, focusing on system architecture, integration of AI components, and practical application of modern web and backend technologies.
 
-Розроблено для курсової роботи
+## Future Improvements
+
+- Integration with real IoT devices
+- Advanced visualization dashboards
+- Online learning and continuous model updates
+- Role-based access control and multi-user households
+
+---
